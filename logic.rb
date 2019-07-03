@@ -18,51 +18,48 @@ def encontra_jogador(mapa)
   # não achei!
 end
 
-def posicoes_validas_a_partir_de(mapa, posicao)
+def soma_vetor(vetor1, vetor2)
+  [vetor1[0] + vetor2[0], vetor1[1] + vetor2[1]]
+end
+
+def posicoes_validas_a_partir_de(mapa, novo_mapa, posicao)
   posicoes = []
-  baixo = mapa[posicao[0] + 1, posicao[1]]
-  if posicao_valida?(mapa, baixo)
-      posicoes << baixo
-  end
-  direita = mapa[posicao[0], posicao[1] + 1]
-  if posicao_valida?(mapa, direita)
-      posicoes << direita
-  end
-  cima = mapa[posicao[0] - 1, posicao[1]]
-  if posicao_valida?(mapa, cima)
-      posicoes << cima
-  end
-  esquerda = mapa[posicao[0], posicao[1] - 1]
-  if posicao_valida?(mapa, esquerda)
-      posicoes << esquerda
+  movimentos = [[+1,0], [0, +1], [-1,0], [0, -1]]
+  movimentos.each do |movimento|
+    nova_posicao = soma_vetor(movimento, posicao)
+    if posicao_valida?(mapa, nova_posicao) && posicao_valida?(novo_mapa, nova_posicao)
+      posicoes << nova_posicao
+    end
   end
   posicoes 
 end
 
-def move_fantasma(mapa, linha, coluna)
-  posicoes = posicoes_validas_a_partir_de mapa, [linha, coluna]
+def move_fantasma(mapa, novo_mapa, linha, coluna)
+  posicoes = posicoes_validas_a_partir_de(mapa, novo_mapa, [linha, coluna])
   
   if posicoes.empty?
     return #early return se nao tiver nenhuma posicao válida
   end
+  aleatoria = rand(posicoes.size)
+  posicao = posicoes[aleatoria]
 
-  posicao = posicoes[0]
-
-  mapa[linha][coluna] = " "
-  mapa[posicao[0]][posicao[1]] = "F"
+  mapa[linha][coluna] = " " #mapa_antigo
+  novo_mapa[posicao[0]][posicao[1]] = "F"
 end
 
 def move_fantasmas(mapa)
   caracter_do_fantasma = "F"
+  novo_mapa = copia_mapa(mapa)
   mapa.each_with_index do |linha_atual, linha|
     linha_atual.chars.each_with_index do |caractere_atual, coluna| #o texto da coluna e a posição
       #o chars transforma a string em um array de caracteres
       eh_fantasma = caractere_atual == caracter_do_fantasma
       if eh_fantasma
-        move_fantasma(mapa, linha, coluna)
+        move_fantasma(mapa, novo_mapa, linha, coluna)
       end
     end
   end
+  novo_mapa
 end
 
 
@@ -82,21 +79,27 @@ def calcula_nova_posicao(heroi, direcao)
 end
 
 def posicao_valida?(mapa, posicao)
-    linhas = mapa.size
-    colunas = mapa[0].size
+  linhas = mapa.size
+  colunas = mapa[0].size
 
-    estourou_linha = posicao[0] < 0 || posicao[0] >= linhas
-    estourou_coluna = posicao[1] < 0 || posicao[1] >= colunas
+  estourou_linha = posicao[0] < 0 || posicao[0] >= linhas
+  estourou_coluna = posicao[1] < 0 || posicao[1] >= colunas
 
-    if estourou_linha || estourou_coluna
-      return false
-    end
+  if estourou_linha || estourou_coluna
+    return false
+  end
 
-    valor_atual = mapa[posicao[0]][posicao[1]]
-    if valor_atual == "X" || valor_atual == "F"
-      return false
-    end
-    true
+  valor_atual = mapa[posicao[0]][posicao[1]]
+  if valor_atual == "X" || valor_atual == "F"
+    return false
+  end
+
+  true
+end
+
+def copia_mapa(mapa) #sem os fantasmas
+  novo_mapa = mapa.join("\n").tr("F", " ").split"\n"
+  # transformou o array numa grande string, depois traduziu os F para espaço em branco e depois tirou os \n para transformar num array de novo
 end
 
 def joga(nome)
@@ -112,8 +115,8 @@ def joga(nome)
     end
     mapa[heroi[0]][heroi[1]] = " "
     mapa[nova_posicao[0]][nova_posicao[1]] = "H"
-
-    move_fantasmas(mapa)
+    
+    mapa = move_fantasmas(mapa)
   end
 end
 
