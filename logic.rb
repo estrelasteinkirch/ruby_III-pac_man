@@ -1,4 +1,5 @@
 require_relative 'ui'
+require_relative 'heroi'
 
 def le_mapa(numero)
   arquivo = "mapa#{numero}.txt"
@@ -11,11 +12,14 @@ def encontra_jogador(mapa)
   mapa.each_with_index do |linha_atual, linha| #o texto da linha e a posição
       coluna_do_heroi = linha_atual.index(caracter_do_heroi) #index
       if coluna_do_heroi #dá verdadeiro se o valor nao for nil
-        return [linha, coluna_do_heroi] 
+        jogador = Heroi.new
+        jogador.linha = linha
+        jogador.coluna = coluna_do_heroi
+        return jogador 
         # achei!
       end
   end
-  # não achei!
+  nil
 end
 
 def soma_vetor(vetor1, vetor2)
@@ -63,20 +67,7 @@ def move_fantasmas(mapa)
 end
 
 
-def calcula_nova_posicao(heroi, direcao)
-  heroi = heroi.dup
-  # linhda = posição 0 da array, coluna = posição 1
-    movimentos = { #dicionário // array associativo
-      "W" => [-1, 0],
-      "S" => [+1, 0],
-      "A" => [0, -1],
-      "D" => [0, +1]
-      }
-  movimento = movimentos[direcao]
-  heroi[0] += movimento[0]
-  heroi[1] += movimento[1]
-  heroi
-end
+
 
 def posicao_valida?(mapa, posicao)
   linhas = mapa.size
@@ -101,6 +92,10 @@ def copia_mapa(mapa) #sem os fantasmas
   novo_mapa = mapa.join("\n").tr("F", " ").split"\n"
   # transformou o array numa grande string, depois traduziu os F para espaço em branco e depois tirou os \n para transformar num array de novo
 end
+  
+def jogador_perdeu?(mapa)
+  perdeu = !encontra_jogador(mapa)
+end
 
 def joga(nome)
   mapa = le_mapa(2)
@@ -109,14 +104,19 @@ def joga(nome)
     direcao = pede_movimento
     heroi = encontra_jogador(mapa)
       
-    nova_posicao = calcula_nova_posicao(heroi, direcao)
-    if !posicao_valida?(mapa, nova_posicao)
+    nova_posicao = heroi.calcula_nova_posicao(direcao)
+    if !posicao_valida?(mapa, nova_posicao.to_array)
       next
     end
-    mapa[heroi[0]][heroi[1]] = " "
-    mapa[nova_posicao[0]][nova_posicao[1]] = "H"
+    heroi.remove_do(mapa)
+    nova_posicao.coloca_no(mapa)
     
     mapa = move_fantasmas(mapa)
+    if jogador_perdeu?(mapa)
+      game_over
+      break
+    end
+
   end
 end
 
